@@ -1,0 +1,47 @@
+{% extends "base_admin.html" %}
+{% block title %}Inicio{% endblock %}
+{% block custom_css %}
+<style>
+    .button-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .grid-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 10px;
+        font-size: 18px;
+        transition: background-color 0.3s ease;
+    }
+
+    .grid-button:hover {
+        background-color: #0056b3;
+    }
+    </style>
+{% endblock %}
+{% block header %}Inicio{% endblock %}
+{% block content %}
+<main>
+    <h1>Bienvenido a la aplicación de detección de objetos en tiempo real</h1>
+    <p>Esta aplicación permite detectar objetos en tiempo real a través de una cámara web o un video.</p>
+    <p>Para comenzar, selecciona una de las opciones del menú de navegación.</p>
+    <div class="button-grid"></div>
+        <a href="" class="grid-button" style="background-color: #007bff;">Alumnos</a>
+        <a href="{{ url_for('admin_blueprint.modelos') }}" class="grid-button" style="background-color: #28a745;">Modelos de Predicción</a>
+        <a href="" class="grid-button" style="background-color: #ffc107;">Plantillas</a>
+        <a href="" class="grid-button" style="background-color: #17a2b8;">Usuario</a>
+        <a href="{{ url_for('admin_blueprint.nuevo_examen') }}" class="grid-button" style="background-color: #dc3545;">Nuevo Examen</a>
+    </div>
+</main>
+{% endblock %}
+
+{% block custom_js %}    
+{% endblock %}

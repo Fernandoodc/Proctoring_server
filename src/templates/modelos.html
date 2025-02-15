@@ -1,0 +1,58 @@
+{% extends "base_admin.html" %}
+{% block title %}Modelos{% endblock %}
+{% block header %}Modelos de Predicción{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Nombre del Modelo</th>
+                <th scope="col">Fecha de Carga</th>
+                <th scope="col">Salidas</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for modelo in modelos %}
+            <tr>
+                <th scope="row">{{ modelo.id }}</th>
+                <td>{{ modelo.nombre }}</td>
+                <td>{{ modelo.fecha_carga }}</td>
+                <td>{{ modelo.salidas }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2 class="mt-5">Cargar Nuevo Modelo</h2>
+    <!-- Mostrar mensajes flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <form action="" method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="nombre" class="form-label">Nombre del Modelo</label>
+            <input type="text" class="form-control" id="nombre" name="nombre" required>
+        </div>
+        <div class="mb-3">
+            <label for="modelo" class="form-label">Archivo .keras</label>
+            <input type="file" class="form-control" id="modelo" name="modelo" accept=".h5" required>
+        </div>
+        <div class="mb-3">
+            <label for="salidas" class="form-label">Salidas del Modelo</label>
+            <input type="text" class="form-control" id="salidas" name="salidas"
+                placeholder="1:facebook, 2:whatsapp, ..." required>
+            <small>Definir mapeo de salidas (formato: clave:valor, separados por comas</small>
+        </div>
+        <button type="submit" class="btn btn-primary">Cargar Modelo</button>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

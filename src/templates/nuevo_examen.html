@@ -1,0 +1,31 @@
+{% extends "base_admin.html" %}
+{% block title %}Nuevo Examen{% endblock %}
+{% block custom_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+{% endblock %}
+{% block header %}Nuevo Examen{% endblock %}
+{% block content %}
+<main>
+    <form action="" method="POST">
+        <div class="form-group">
+            <label for="nombre">Nombre del Examen</label>
+            <input type="text" class="form-control" id="nombre" name="nombre" required>
+        </div>
+        <div class="form-group">
+            <label for="descripcion">Programas a Utilizar</label>
+            <select class="form-control select2" multiple id="salidas" name="salidas" required>
+                {% for salida in salidas %}
+                <option value="{{salida.id_salida}}">{{salida.descripcion}} - {{salida.modelo.descripcion}}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Iniciar Examen</button>
+{% endblock %}
+{% block custom_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.select2').select2();
+    });
+</script>
+{% endblock %}

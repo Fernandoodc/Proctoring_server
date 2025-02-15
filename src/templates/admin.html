@@ -1,0 +1,104 @@
+{% extends "base_admin.html" %}
+{% block title %}Receptor{% endblock %}
+{% block custom_css %}
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        color: #333;
+        margin: 0;
+        padding: 0;
+    }
+
+    header {
+        background-color: #4CAF50;
+        color: white;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    main {
+        padding: 1rem;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+
+    table th,
+    table td {
+        border: 1px solid #ddd;
+        padding: 0.5rem;
+        text-align: left;
+    }
+
+    table th {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    .no-detections {
+        text-align: center;
+        margin-top: 2rem;
+        color: #777;
+    }
+</style>
+{% endblock %}
+{% block header %}Detecciones en Tiempo Real{% endblock %}
+{% block content %}
+<main>
+    <table id="detections-table">
+        <thead>
+            <tr>
+                <th>Cliente (SID)</th>
+                <th>Modelo Detectado</th>
+                <th>Confianza (%)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr id="no-detections-row">
+                <td colspan="3" class="no-detections">No hay detecciones por el momento</td>
+            </tr>
+        </tbody>
+    </table>
+</main>
+{% endblock %}
+{% block custom_js %}
+<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+<script>
+    const socket = io('/admin');
+
+    const tableBody = document.querySelector('#detections-table tbody');
+    const noDetectionsRow = document.getElementById('no-detections-row');
+
+    // Escuchar las notificaciones de detecciones
+    socket.on('new_detection', (data) => {
+        console.log('Nueva detección:', data);
+        // Quitar el mensaje de "No hay detecciones" si existe
+        if (noDetectionsRow) {
+            noDetectionsRow.remove();
+        }
+
+        // Crear una nueva fila para la detección
+        const newRow = document.createElement('tr');
+
+        const sidCell = document.createElement('td');
+        sidCell.textContent = data.sid;
+
+        const modelCell = document.createElement('td');
+        modelCell.textContent = data.modelo;
+
+        const confidenceCell = document.createElement('td');
+        confidenceCell.textContent = (data.confianza * 100).toFixed(2) + '%';
+
+        newRow.appendChild(sidCell);
+        newRow.appendChild(modelCell);
+        newRow.appendChild(confidenceCell);
+
+        // Agregar la fila a la tabla
+        tableBody.appendChild(newRow);
+    });
+</script>
+{% endblock %}
