@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer ,String, Boolean, Date, ForeignKey, DateTime
+from sqlalchemy import Column, Integer ,String, Boolean, Date, ForeignKey, DateTime, Text
+from sqlalchemy.dialects.mysql import LONGTEXT
 from src.database.db_mysql import Base
 from sqlalchemy.orm import relationship
 from src.database.audit import AuditableMixin
@@ -55,6 +56,14 @@ class Detecciones(AuditableMixin, Base):
     id_salida = Column(Integer, ForeignKey('Salidas.id_salida'))
     id_usuario = Column(Integer, ForeignKey('Usuarios.idUsuario'))
     fecha_hora = Column(DateTime, nullable=False)
+    imagen = Column(Text, nullable=True)
+
+class ImagenesDetecciones(AuditableMixin, Base):
+    #tabla temporal y provisoria para guardar las imagenes de detecciones en lo que se resuelve el problema del id de examen actual
+    __tablename__ = 'ImagenesDetecciones'
+    id_imagen = Column(Integer, primary_key=True, index=True)
+    id_usuario = Column(Integer, ForeignKey('Usuarios.idUsuario'))
+    imagen = Column(LONGTEXT, nullable=False)
 
 class Conectados(AuditableMixin, Base):
     __tablename__ = 'Conectados'

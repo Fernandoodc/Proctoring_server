@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +16,7 @@
             height: 100vh;
             margin: 0;
         }
+
         .container {
             text-align: center;
             background: #ffffff;
@@ -22,28 +24,84 @@
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+
         h1 {
             margin-bottom: 20px;
             color: #343a40;
         }
+
         video {
             border-radius: 10px;
             border: 2px solid #343a40;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">{{current_user.fullname}}</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{url_for('usuarios_blueprint.updatePassword', idUsuario = current_user.id)}}">Cambiar Contraseña</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/auth/logout">Cerrar Sesión</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
         <h1>Compartir Pantalla</h1>
         <div class="row">
             <div class="col-lg-12">
-                <video id="screenVideo" width="95%" autoplay playsinline class="img-fluid"></video>
+                <video id="screenVideo" width="80%" autoplay playsinline class="img-fluid"></video>
             </div>
         </div>
         <div class="row">
-            <div class="col-lg-12   ">
-                <button id="shareButton" class="btn btn-primary">Compartir Pantalla</button>
-                <button id="stopButton" class="btn btn-danger" style="display: none;">Dejar de Compartir</button>
+            <div class="col-lg-12  </div> ">
+                <!-- Modal trigger button -->
+                <button type="button" class="btn btn-primary" id="alerta-modal-btn" data-bs-toggle="modal"
+                    data-bs-target="#alerta-modal">
+                    Compartir Pantalla
+                </button>
+                <button type="button" id="stopButton" class="btn btn-danger" style="display: none;">Dejar de Compartir</button>
+
+                <!-- Modal Body -->
+                <!-- if you want to close by clicking outside the modal, delete the last endpoint:data-bs-backdrop and data-bs-keyboard -->
+                <div class="modal fade" id="alerta-modal" tabindex="-1" data-bs-backdrop="static"
+                    data-bs-keyboard="false" role="dialog" aria-labelledby="alerta-title" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Antes de continuar, le recomendamos desactivar las notificaciones y cerrar cualquier
+                                    programa o ventana que no vaya a utilizar durante el examen. Esto ayudará a proteger
+                                    su privacidad y evitar distracciones.</p>
+                                <p>Al compartir su pantalla, solo se supervisará la actividad relacionada con el examen.
+                                </p>
+                                <p>¿Desea continuar?</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    Cancelar
+                                </button>
+                                <button id="shareButton" data-bs-dismiss="modal" class="btn btn-primary">Aceptar y
+                                    Continuar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
             </div>
         </div>
     </div>
@@ -51,6 +109,7 @@
     <script>
         const HEARTBEAT_INTERVAL = 5000; // Intervalo de latido en milisegundos
         const videoElement = document.getElementById('screenVideo');
+        const modalButton = document.getElementById('alerta-modal-btn');
         const shareButton = document.getElementById('shareButton');
         const stopButton = document.getElementById('stopButton');
         const socket = io();
@@ -79,8 +138,8 @@
                 }
 
                 videoElement.srcObject = screenStream;
-                shareButton.style.display = 'none'; // Ocultar el botón al compartir pantalla
-                stopButton.style.display = 'block'; // Mostrar el botón para dejar de compartir pantalla
+                modalButton.style.display = 'none'; // Ocultar el botón al compartir pantalla
+                stopButton.style.display = ''; // Mostrar el botón para dejar de compartir pantalla
 
                 // Crear un canvas para capturar cada frame del video
                 const canvas = document.createElement('canvas');
@@ -114,7 +173,7 @@
             }
             clearInterval(intervalId);
             videoElement.srcObject = null;
-            shareButton.style.display = 'block'; // Mostrar el botón al dejar de compartir pantalla
+            modalButton.style.display = ''; // Mostrar el botón al dejar de compartir pantalla
             stopButton.style.display = 'none'; // Ocultar el botón para dejar de compartir pantalla
         }
 
@@ -125,6 +184,7 @@
 
         socket.on('disconnect', () => {
             console.log('Desconectado del servidor');
+
         });
 
         // Enviar latido al servidor
@@ -139,6 +199,17 @@
             shareButton.addEventListener('click', startScreenShare);
             stopButton.addEventListener('click', stopScreenShare);
         };
+        socket.on('terminar_examen', () => {
+            stopScreenShare();
+            alert('El examen ha finalizado. Gracias por su participación.');
+        });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
+        integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
+        integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF"
+        crossorigin="anonymous"></script>
 </body>
+
 </html>

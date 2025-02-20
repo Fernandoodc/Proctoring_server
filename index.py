@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request, redirect
-from src.routes import AuthRoutes, StreamRoutes, AdminRoutes
-from flask_login import LoginManager, current_user
+from flask import request, redirect, url_for
+from src.routes import AuthRoutes, StreamRoutes, AdminRoutes, UsuariosRoutes, IndexRoutes
+from flask_login import current_user
 from src.database import models as dbModels
 from src.database.db_mysql import engine
 from src.models.usersModels import User
@@ -25,12 +25,17 @@ def load_user(id):
 def status_401(error):
     return redirect("/auth/")
 
+# Rutas
 app.register_error_handler(401, status_401)
+app.register_blueprint(IndexRoutes.main, url_prefix='/')
 app.register_blueprint(AuthRoutes.main, url_prefix='/auth')
 app.register_blueprint(StreamRoutes.main, url_prefix='/stream')
 app.register_blueprint(AdminRoutes.main, url_prefix='/admin')
+app.register_blueprint(UsuariosRoutes.main, url_prefix='/usuarios')
 
 
+
+# Manejar la conexión de un cliente
 @socketio.on('connect')
 @authenticated_only
 def handle_connect():
@@ -42,16 +47,19 @@ def handle_connect():
         "nombre": User.get_by_id(id_user).fullname
     }
     print(CONECTADOS)
-
+    socketio.emit('connecteds', CONECTADOS, namespace='/admin')
+# Manejar la desconexión de un cliente
 @socketio.on('disconnect')
 def handle_disconnect():
     active_connections.pop(request.sid, None)  # Eliminar del registro
     print('Un cliente se ha desconectado: ' + request.sid)
     CONECTADOS.pop(request.sid, None)  # Eliminar del registro
-    file = f'frame{request.sid}.jpg'
-    if os.path.exists(file):
-        os.remove(file)
+    #file = f'frame{request.sid}.jpg'
+    #if os.path.exists(file):
+    #   os.remove(file)
+    socketio.emit('connecteds', CONECTADOS, namespace='/admin')
 
+# Manejar los latidos de un cliente, para verificar que esté conectado
 @socketio.on('heartbeat')
 @authenticated_only
 def handle_heartbeat():
@@ -59,7 +67,7 @@ def handle_heartbeat():
 
 
 
-
+# Manejar los frames de video recibidos
 @socketio.on('video_frame')
 @authenticated_only
 def handle_video_frame(data):
@@ -77,7 +85,9 @@ def handle_video_frame(data):
 # Iniciar el hilo para verificar los latidos
 threading.Thread(target=check_heartbeats, daemon=True).start()
 
+
 class AdminNamespace(Namespace):
+    # Manejar la conexión de un administrador
     def on_connect(self):
         print('Un administrador se ha conectado')
         emit('detections', detections)
@@ -89,4 +99,4 @@ socketio.on_namespace(AdminNamespace('/admin'))
 
 if __name__ == '__main__':
     #load_models()
-    socketio.run(app, debug=True, allow_unsafe_werkzeug=True, host='0.0.0.0')
+    socketio.run(app, debug=True, allow_unsafe_werkzeug=True, host='0.0.0.0', ssl_context='adhoc')

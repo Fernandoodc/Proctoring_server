@@ -1,4 +1,7 @@
+from flask import url_for
 from flask_socketio import disconnect
+from src.models.deteccionesModels import Detecciones
+import base64
 import time
 import threading
 import cv2
@@ -35,9 +38,12 @@ def process_frame(frame, sid):
         # Convertir el frame a una imagen de OpenCV
         np_arr = np.frombuffer(frame, np.uint8)
         img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        frame_base64 = base64.b64encode(frame).decode('utf-8')
+        len_frame = len(frame_base64)
+
 
         # Redimensionar la imagen al tamaño esperado por los modelos
-        img_resized = cv2.resize(img, (281, 500))  # (ancho, alto)
+        img_resized = cv2.resize(img, (225, 400))  # (ancho, alto)
         img_normalized = img_resized.astype(float) / 255.0
         img_array = np.expand_dims(img_normalized, axis=0)
 
@@ -78,11 +84,15 @@ def process_frame(frame, sid):
                 highest_confidence = confidence
         if not best_model:
             print("No se detectó nada")
+            
+            id_deteccion = Detecciones.add_img_deteccion(CONECTADOS[sid]['id'], frame_base64)
             detection_message = {
-                'sid': CONECTADOS[sid]['nombre'],
-                'modelo': "No Detectado",
-                'confianza': 0
+                'usuario': CONECTADOS[sid]['nombre'],
+                'mensaje': "No Detectado",
+                'id_imagen': id_deteccion
             }
+            print(detection_message)
+            print(len(Detecciones.get_img_deteccion(id_deteccion).imagen), "-", len_frame)
             detections.append(detection_message)  # Guardar la detección
             socketio.emit('new_detection', detection_message, namespace='/admin')
         else:

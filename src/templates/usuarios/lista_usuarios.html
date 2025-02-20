@@ -1,0 +1,52 @@
+{% extends "base_admin.html" %}
+{% block title %}Usuarios{% endblock %}
+{%block custom_css%}
+<link rel="stylesheet" href="/static/datatables/datatables.min.css">
+{%endblock%}
+{% block header %}Lista de Usuarios{% endblock %}
+{% block content %}
+                <h4 class="card-title mb-0"><a name="add-user" id="add-user" class="btn btn-primary"
+                        href="agregar/" role="button"><i class="fa fa-plus" aria-hidden="true"></i></a>
+
+                </h4>
+                <div class="table-responsive">
+                    <table class="table table-light" id="usuarios-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Usuario</th>
+                                <th scope="col">Nombre</th>
+                                <th scope="col">Documento</th>
+                                <th scope="col">Tipo de Usuario</th>
+                                <th scope="col"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usuario in usuario %}
+                            <tr>
+                                <td>{{usuario.username}}</td>
+                                <td>{{usuario.nombre}}</td>
+                                <td>{{usuario.documento}}</td>
+                                <td>{{usuario.id_tipo}}</td>
+                                <td>
+                                    <a class="btn btn-success" href="{{usuario.idUsuario}}/password/reset" role="button"
+                                        title="Restablecer Contraseña"><i class="fa fa-key" aria-hidden="true"></i></a>
+                                    <a class="btn btn-primary" href="{{usuario.idUsuario}}/editar" role="button"
+                                        title="Editar datos"><i class="fa fa-edit" aria-hidden="true"></i></a>
+                                    {% if usuario.activo == true %}
+                                    <a class="btn btn-info" href="{{usuario.idUsuario}}/desactivar" role="button"
+                                        title="Desactivar Usuario"><i class="fa fa-toggle-on" aria-hidden="true"></i></a>
+                                    {% else %}
+                                    <a class="btn btn-danger" href="{{usuario.idUsuario}}/activar" role="button"
+                                        title="Activar Usuario"><i class="fa fa-toggle-off" aria-hidden="true"></i></a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/datatables/datatables.min.js"></script>
+<script src="/static/datatables/Responsive-2.4.0/js/responsive.bootstrap5.min.js"></script>
+{%endblock%}

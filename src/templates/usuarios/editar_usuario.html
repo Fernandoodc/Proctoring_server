@@ -1,0 +1,77 @@
+{% extends "base_admin.html" %}
+{% block title %}{{usuario.nombre}}{% endblock %}
+{%block custom_css%}
+{%endblock%}
+{% block header %}Editar Usuario{% endblock %}
+{% block content %}
+<h4 class="card-title mb-0">{{usuario.nombre}}
+</h4>
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<br />
+{% for message in messages %}
+<div class="alert alert-secondary alert-dismissible" role="alert">
+    <strong>{{ message }}</strong>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+{% endwith %}
+<form action="" autocomplete="off" id="form-newUSer" method="post">
+    <div class="row mb-3 mt-3">
+        <label for="username" class="col-form-label col-sm-2">Usuario<span
+                class="text-danger obli ">*</span></label>
+        <div class="col-sm-10">
+            <input type="text" disabled class="form-control infoUser" name="username" id="username"
+                value="{{usuario.username}}" aria-describedby="" placeholder="" required>
+        </div>
+    </div>
+    <div class="row mb-3 mt-3">
+        <label for="documentos" class="col-form-label col-sm-2">Documento<span
+                class="text-danger obli ">*</span></label>
+        <div class="col-sm-10">
+            <input type="text" class="form-control infoUser" name="documento" id="documento"
+                value="{{usuario.documento}}" aria-describedby="" placeholder="" required>
+        </div>
+    </div>
+    <div class="mb-3 row">
+        <label for="nombre" class="col-form-label col-sm-2">Nombre<span class="text-danger obli ">*</span></label>
+        <div class="col-sm-10">
+            <input type="text" class="form-control infoUser" name="nombre" id="nombre" value="{{usuario.nombre}}"
+                aria-describedby="" placeholder="" required>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-2 mt-2">
+            Tipo de Usuario
+        </div>
+        <div class="col-sm-10">
+            <div class="mb-3">
+                <select
+                    class="form-select form-select-lg"
+                    name="tipo_usuario"
+                    id="tipo_usuario"
+                >
+                {% for tipo in tipos_usuarios %}
+                    {% if tipo.id_tipo == usuario.id_tipo %}
+                    <option value="{{tipo.id_tipo}}" selected>{{tipo.descripcion}}</option>
+                    {% else %}
+                    <option value="{{tipo.id_tipo}}">{{tipo.descripcion}}</option>
+                    {% endif %}
+                {% endfor %}
+                </select>
+            </div>
+            
+        </div>
+    <div class="row mb-3">
+        <div class="col-sm-3">
+            <button type="submit" class="btn btn-success" id="newUser-ok">Continuar<i class="ri-check-double-line"
+                    hidden></i></button>
+        </div>
+    </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/usuarios.js"></script>
+{%endblock%}

@@ -30,18 +30,17 @@
 {% block header %}Inicio{% endblock %}
 {% block content %}
 <main>
-    <h1>Bienvenido a la aplicación de detección de objetos en tiempo real</h1>
-    <p>Esta aplicación permite detectar objetos en tiempo real a través de una cámara web o un video.</p>
-    <p>Para comenzar, selecciona una de las opciones del menú de navegación.</p>
+    <h2>Bienvenido al Sistema de Supervisión de Evaluaciones</h2>
+    <p>Este sistema utiliza inteligencia artificial para monitorear exámenes en tiempo real, analizando la actividad en pantalla y detectando posibles irregularidades.</p>
+    <p>Para iniciar, selecciona una opción en el menú de navegación.</p>
     <div class="button-grid"></div>
-        <a href="" class="grid-button" style="background-color: #007bff;">Alumnos</a>
-        <a href="{{ url_for('admin_blueprint.modelos') }}" class="grid-button" style="background-color: #28a745;">Modelos de Predicción</a>
-        <a href="" class="grid-button" style="background-color: #ffc107;">Plantillas</a>
-        <a href="" class="grid-button" style="background-color: #17a2b8;">Usuario</a>
-        <a href="{{ url_for('admin_blueprint.nuevo_examen') }}" class="grid-button" style="background-color: #dc3545;">Nuevo Examen</a>
+        <a href="{{ url_for('usuarios_blueprint.viewUsuarios') }}" class="grid-button" style="background-color: #4CAF50;">Usuarios</a>
+        <a href="{{ url_for('admin_blueprint.modelos') }}" class="grid-button" style="background-color: #FF9800;">Modelos de Predicción</a>
+        <!--<a href="" class="grid-button" style="background-color: #FFC107;">Plantillas</a>-->
+        <a href="" class="grid-button" style="background-color: #00BCD4;">Usuario</a>
+        <a href="{{ url_for('admin_blueprint.nuevo_examen') }}" class="grid-button" style="background-color: #F44336;">Nuevo Examen</a>
     </div>
 </main>
 {% endblock %}
-
 {% block custom_js %}    
 {% endblock %}

@@ -44,25 +44,47 @@
         margin-top: 2rem;
         color: #777;
     }
+
+    .btn-container {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+    }
 </style>
 {% endblock %}
 {% block header %}Detecciones en Tiempo Real{% endblock %}
 {% block content %}
 <main>
-    <table id="detections-table">
-        <thead>
-            <tr>
-                <th>Cliente (SID)</th>
-                <th>Modelo Detectado</th>
-                <th>Confianza (%)</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr id="no-detections-row">
-                <td colspan="3" class="no-detections">No hay detecciones por el momento</td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="btn-container">
+                    <a href="{{url_for('admin_blueprint.terminar_examen')}}" class="btn btn-danger">Terminar Examen</a>
+                    <button id="clear-table" class="btn btn-warning">Limpiar Tabla</button>
+                </div>
+                <h6>Detecciones</h6>
+                <table id="detections-table">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Mensaje</th>
+                            <th>Imagen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="no-detections-row">
+                            <td colspan="3" class="no-detections">No hay detecciones por el momento</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-4">
+                <h6>Usuarios Conectados</h6>
+                <ul id="connected-users">
+                </ul>
+            </div>
+        </div>
+    </div>
 </main>
 {% endblock %}
 {% block custom_js %}
@@ -80,25 +102,53 @@
         if (noDetectionsRow) {
             noDetectionsRow.remove();
         }
+        
 
         // Crear una nueva fila para la detección
         const newRow = document.createElement('tr');
 
         const sidCell = document.createElement('td');
-        sidCell.textContent = data.sid;
+        sidCell.textContent = data.usuario;
 
         const modelCell = document.createElement('td');
-        modelCell.textContent = data.modelo;
+        modelCell.textContent = data.mensaje;
 
-        const confidenceCell = document.createElement('td');
-        confidenceCell.textContent = (data.confianza * 100).toFixed(2) + '%';
+        const imagenCell = document.createElement('td');
+        const imagenLink = document.createElement('a');
+        imagenLink.href = `/admin/detecciones/imagen/${data.id_imagen}`;
+        imagenLink.textContent = 'Ver Imagen';
+        imagenLink.target = '_blank'; // Abrir en otra pestaña
+        imagenCell.appendChild(imagenLink);
 
         newRow.appendChild(sidCell);
         newRow.appendChild(modelCell);
-        newRow.appendChild(confidenceCell);
+        newRow.appendChild(imagenCell);
 
         // Agregar la fila a la tabla
         tableBody.appendChild(newRow);
+    });
+
+    socket.on('connecteds', (data) => {
+        console.log('Usuarios conectados:', data);
+        $('#connected-users').html('');
+        Object.entries(data).forEach(([key, elemento]) => {
+            const id = elemento.id;
+            const nombre = elemento.nombre;
+            console.log(`ID: ${id}, Nombre: ${nombre}`);
+            const list = document.getElementById('connected-users');
+            const item = document.createElement('li');
+            item.textContent = nombre;
+            list.appendChild(item);
+        });
+    });
+
+    // Limpiar la tabla de detecciones
+    document.getElementById('clear-table').addEventListener('click', () => {
+        tableBody.innerHTML = '';
+        const noDetectionsRow = document.createElement('tr');
+        noDetectionsRow.id = 'no-detections-row';
+        noDetectionsRow.innerHTML = '<td colspan="3" class="no-detections">No hay detecciones por el momento</td>';
+        tableBody.appendChild(noDetectionsRow);
     });
 </script>
 {% endblock %}

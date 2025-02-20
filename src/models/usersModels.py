@@ -3,7 +3,7 @@ from flask import session
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_login import UserMixin
 from src.database.db_mysql import get_connection
-from src.database.models import Usuarios as dbUser
+from src.database.models import Usuarios as dbUser, TipoUsuarios as dbTipoUsuarios
 from config import settings
 class User(UserMixin):
     def __init__(self, id, username, password, fullname, id_tipo = None) -> None:
@@ -56,7 +56,13 @@ class User(UserMixin):
     def current_user_id(self):
         return session["_user_id"]
     
-    
+    @classmethod
+    def get_tipos_usuarios(self):
+        connection = get_connection()
+        tipos = connection.query(dbTipoUsuarios).all()
+        connection.close()
+        return tipos
+
     @classmethod
     def get_tipo_by_id(self, id):
         connection = get_connection()
@@ -74,14 +80,14 @@ class User(UserMixin):
         return usuarios
 
     @classmethod
-    def add_user(self, username, password, nombre, documento, celular, email):
+    def add_user(self, username, password, nombre, documento, tipo_usuario):
         connection = get_connection()
         newUser = dbUser(
             username = username,
             password = generate_password_hash(password, method=settings.HASH),
             nombre = nombre,
             documento = documento,
-            celular = celular,
+            id_tipo = tipo_usuario,
             activo = True
         )
         connection.add(newUser)
@@ -91,29 +97,14 @@ class User(UserMixin):
         return newUser.idUsuario
     
     @classmethod
-    def update_user(self, idUsuario, nombre, documento, celular, email):
+    def update_user(self, idUsuario, nombre, documento, tipo_usuario):
         connection = get_connection()
         usuario = connection.query(dbUser).filter(dbUser.idUsuario == idUsuario).first()
         usuario.nombre = nombre
         usuario.documento = documento
-        usuario.celular = celular
-        usuario.email = email
+        usuario.id_tipo = tipo_usuario
         connection.commit()
         connection.close()
-    @classmethod
-    def set_permisos_by_id(self, idUsuario, permisos):
-        connection = get_connection()
-        for permiso in permisos:
-            newPermiso = dbPermisos(
-                idUsuario = idUsuario,
-                codigo = permiso,
-                permiso = permiso
-            )
-            connection.add(newPermiso)
-            connection.flush()
-        connection.commit()
-        connection.close()
-    
     
     @classmethod
     def set_new_password_by_id(self, idUsuario, password):

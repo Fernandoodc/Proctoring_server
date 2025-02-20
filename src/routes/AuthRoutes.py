@@ -29,14 +29,13 @@ def login():
                     venc_token = datetime.now() + timedelta(hours=settings.VIDA_TOKEN)
                     login_user(authenticated_user, duration=venc_token)
                     session["_tipo_usuario"] = authenticated_user.tipo_usuario
-                    if authenticated_user.tipo_usuario == 1:
+                    if authenticated_user.tipo_usuario == 1 or authenticated_user.tipo_usuario == 2:
                         return redirect("/admin")
-                    elif authenticated_user.tipo_usuario == 2:
-                        print("entro")
+                    elif authenticated_user.tipo_usuario == 3:
                         return redirect("/stream")
                 #return jsonify({'success': True, 'token': encoded_token})
             flash("Error, Usuario o contraseña incorrecta")
-            return render_template('auth/login.html')
+            return render_template('login.html')
         except Exception as ex:
             print(ex)
             return jsonify({'message': "ERROR", 'success': False})
@@ -44,3 +43,4 @@ def login():
 @main.route('/logout')
 def logout():
     logout_user()
+    return redirect("/")
