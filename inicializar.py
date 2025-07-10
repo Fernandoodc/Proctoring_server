@@ -41,9 +41,8 @@ try:
             activo = True
         )
     connection.add(usuarioAdmin)
-    print("Usuario administrador creado exitosamente. \nUsuario: admin \nContraseña: admin")
+    print("Usuario administrador creado exitosamente.\n Usuario: admin, Contraseña: admin\n")
     connection.commit()
-    print("Base de datos inicializada correctamente.")
 except Exception as e:
     print(f"Error al inicializar la base de datos: {e}")
     connection.rollback()  # Deshacer cambios en caso de error

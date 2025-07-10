@@ -13,7 +13,7 @@ Este proyecto es un **servidor de proctoring modular** basado en modelos de **re
 
 1. El docente define la lista blanca de programas y páginas web permitidas seleccionando los modelos correspondientes.
 2. El alumno transmite su pantalla al servidor mediante una conexión WebSocket.
-3. Cada fotograma recibido es analizado por los modelos CNN seleccionados, cada uno entrenado para reconocer un programa o página específica.
+3. Cada fotograma recibido es analizado simultáneamente por los modelos CNN seleccionados, cada uno entrenado para reconocer un programa o página específica.
 4. Si ningún modelo de la lista blanca reconoce el contenido del fotograma, se genera una alerta automática para el docente.
 5. El sistema es modular, permitiendo agregar nuevos modelos fácilmente sin reentrenar el conjunto completo.
 
