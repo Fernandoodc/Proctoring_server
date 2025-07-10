@@ -1,11 +1,9 @@
-from flask import Blueprint, request, jsonify, render_template, redirect, flash, session, url_for
-from flask_login import login_required, current_user
+from flask import Blueprint, request, render_template, redirect, flash, url_for
+from flask_login import login_required
 from src.models.modelosModels import Modelos
-from src.models.examenesModels import Examanes
+from src.decoradores import roles_required
 from src.models.deteccionesModels import Detecciones
 from src import MODELOS_SELECCIONADOS, socketio
-from tensorflow.keras.models import load_model
-from datetime import datetime
 
 main = Blueprint('admin_blueprint', __name__)
 
@@ -16,24 +14,24 @@ def inicio():
 
 @main.route('/nuevo_examen', methods=['GET', 'POST'])
 @login_required
+@roles_required(2)
 def nuevo_examen():
     if request.method == 'GET':
-        salidas = Modelos.get_all_salidas()
-        return render_template('nuevo_examen.html', salidas=salidas)
+        modelos = Modelos.get_modelos()
+        return render_template('nuevo_examen.html', modelos=modelos)
     elif request.method == 'POST':
         #nom_examen = request.form['nombre']
-        salidas = request.form.getlist('salidas')
+        modelosSelected = request.form.getlist('modelos')
+        print(modelosSelected)
         global MODELOS_SELECCIONADOS
-        for salida in salidas:
-            modelo = Modelos.get_modelo_by_id_salida(int(salida))
-            if not modelo in MODELOS_SELECCIONADOS:
-                MODELOS_SELECCIONADOS.append(Modelos.get_modelo_by_id_salida(int(salida)).id_modelo)
-        fecha = datetime.now()
-        #Examanes.add_examen(nom_examen, fecha, current_user.id)
+        for modelo in modelosSelected:
+            if not int(modelo) in MODELOS_SELECCIONADOS:
+                MODELOS_SELECCIONADOS.append(int(modelo))
         return redirect(url_for('admin_blueprint.stream'))
 
 @main.route('/terminar_examen', methods=['GET'])
 @login_required
+@roles_required(2)
 def terminar_examen():
     global MODELOS_SELECCIONADOS
     MODELOS_SELECCIONADOS = []
@@ -45,6 +43,7 @@ def terminar_examen():
 
 @main.route('/detecciones', methods=['GET'])
 @login_required
+@roles_required(2)
 def stream():
     if MODELOS_SELECCIONADOS == []:
         return redirect(url_for('admin_blueprint.inicio'))
@@ -58,21 +57,38 @@ def get_img(id):
 
 @main.route('modelos/', methods=['GET', 'POST'])
 @login_required
+@roles_required(1)
 def modelos():
     if request.method == 'GET':
-        return render_template('modelos.html')
+        modelos = Modelos.get_all_modelos()
+        return render_template('modelos.html', modelos=modelos)
     else:
         nombre = request.form['nombre']
         file = request.files['modelo']
-        salidas = request.form['salidas']
+        salida = request.form['salida']
         if file.filename == '':
             flash("No se ha seleccionado un archivo", "error")
             return render_template('modelos.html')
         if not file.filename.endswith(".h5"):
             flash("El archivo seleccionado no es un modelo válido", "error")
             return render_template('modelos.html')  
-        if nombre == "" or file == None or salidas == "":
+        if nombre == "" or file == None or salida == "":
             flash("Faltan datos", "error")
             return render_template('modelos.html')
-        Modelos.add_modelo(nombre, file, salidas)
-        return render_template('modelos.html')
+        Modelos.add_modelo(nombre, file, salida)
+        modelos = Modelos.get_all_modelos()
+        return render_template('modelos.html', modelos=modelos)
+
+@main.route('modelos/desactivar_modelo/<int:id>', methods=['GET'])
+@login_required
+@roles_required(1)
+def desactivar_modelo(id):
+    Modelos.desactivar_modelo(id)
+    return redirect(url_for('admin_blueprint.modelos'))
+
+@main.route('modelos/activar_modelo/<int:id>', methods=['GET'])
+@login_required
+@roles_required(1)
+def activar_modelo(id):
+    Modelos.activar_modelo(id)
+    return redirect(url_for('admin_blueprint.modelos'))

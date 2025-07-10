@@ -3,10 +3,12 @@ from flask import session
 from flask_login import current_user
 from flask_socketio import disconnect
 
+# Decorador para verificar si el usuario tiene uno de los roles requeridos
 def roles_required(*role_numbers: int):
     def wrapper(f):
         @wraps(f)   
         def wrap(*args, **kwargs):
+            print(session['_tipo_usuario'])
             for r in role_numbers:
                 if r == session['_tipo_usuario'] or 1 == session['_tipo_usuario']: #1 es el rol de Administrador
                     return f(*args, **kwargs)

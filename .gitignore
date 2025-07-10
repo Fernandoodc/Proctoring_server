@@ -1,0 +1,5 @@
+src/static/uploads/detecciones/*
+facebookv2_400_mobilenet_fino_model.h5
+vs_codev2_400_mobilenet_sinfino_model.h5
+whatsappv2_400_mobilenet_fino_model.h5
+.env

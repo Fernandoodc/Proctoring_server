@@ -84,7 +84,7 @@
                                     aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <p>Antes de continuar, le recomendamos desactivar las notificaciones y cerrar cualquier
+                                <p>Antes de continuar, le solicitamos desactivar las notificaciones y cerrar cualquier
                                     programa o ventana que no vaya a utilizar durante el examen. Esto ayudará a proteger
                                     su privacidad y evitar distracciones.</p>
                                 <p>Al compartir su pantalla, solo se supervisará la actividad relacionada con el examen.
@@ -107,14 +107,14 @@
     </div>
 
     <script>
-        const HEARTBEAT_INTERVAL = 5000; // Intervalo de latido en milisegundos
+        const HEARTBEAT_INTERVAL = 1000; // Intervalo de latido en milisegundos
         const videoElement = document.getElementById('screenVideo');
         const modalButton = document.getElementById('alerta-modal-btn');
         const shareButton = document.getElementById('shareButton');
         const stopButton = document.getElementById('stopButton');
-        const socket = io();
         let screenStream;
         let intervalId;
+        let socket;
 
         async function startScreenShare() {
             try {
@@ -141,15 +141,37 @@
                 modalButton.style.display = 'none'; // Ocultar el botón al compartir pantalla
                 stopButton.style.display = ''; // Mostrar el botón para dejar de compartir pantalla
 
+                // Conectar al servidor WebSocket
+                socket = io();
+
+                socket.on('connect', () => {
+                    console.log('Conectado al servidor');
+                    startHeartbeat();
+                });
+
+                socket.on('disconnect', () => {
+                    console.log('Desconectado del servidor');
+                });
+
+                socket.on('terminar_examen', () => {
+                    stopScreenShare();
+                    alert('El examen ha finalizado. Gracias por su participación.');
+                });
+
                 // Crear un canvas para capturar cada frame del video
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
 
+                //antes de transmisitir espera 3 segundos
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
                 // Cada 100 ms capturamos un frame y lo enviamos al servidor
                 intervalId = setInterval(() => {
-                    canvas.width = videoElement.videoWidth;
-                    canvas.height = videoElement.videoHeight;
-                    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                    const targetWidth = 1280;
+                    const targetHeight = 720;
+                    canvas.width = targetWidth;
+                    canvas.height = targetHeight;
+                    ctx.drawImage(videoElement, 0, 0, targetWidth, targetHeight);
 
                     // Convertir el canvas a una imagen base64
                     const frameData = canvas.toDataURL('image/jpeg');
@@ -175,17 +197,13 @@
             videoElement.srcObject = null;
             modalButton.style.display = ''; // Mostrar el botón al dejar de compartir pantalla
             stopButton.style.display = 'none'; // Ocultar el botón para dejar de compartir pantalla
+
+            // Desconectar del servidor WebSocket
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+            }
         }
-
-        socket.on('connect', () => {
-            console.log('Conectado al servidor');
-            startHeartbeat();
-        });
-
-        socket.on('disconnect', () => {
-            console.log('Desconectado del servidor');
-
-        });
 
         // Enviar latido al servidor
         function startHeartbeat() {
@@ -199,10 +217,7 @@
             shareButton.addEventListener('click', startScreenShare);
             stopButton.addEventListener('click', stopScreenShare);
         };
-        socket.on('terminar_examen', () => {
-            stopScreenShare();
-            alert('El examen ha finalizado. Gracias por su participación.');
-        });
+    </script>
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
         integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p"

@@ -20,14 +20,13 @@
             <input type="text" class="form-control" id="nombre" name="nombre" required>
         </div>
         <div class="mb-3">
-            <label for="modelo" class="form-label">Archivo .keras</label>
+            <label for="modelo" class="form-label">Archivo .h5</label>
             <input type="file" class="form-control" id="modelo" name="modelo" accept=".h5" required>
         </div>
         <div class="mb-3">
-            <label for="salidas" class="form-label">Salidas del Modelo</label>
-            <input type="text" class="form-control" id="salidas" name="salidas"
-                placeholder="1:facebook, 2:whatsapp, ..." required>
-            <small>Definir mapeo de salidas (formato: clave:valor, separados por comas</small>
+            <label for="salida" class="form-label">Salidas del Modelo</label>
+            <input type="text" class="form-control" id="salida" name="salida"
+                placeholder="" required>
         </div>
         <button type="submit" class="btn btn-primary">Cargar Modelo</button>
     </form>
@@ -38,15 +37,25 @@
                 <th scope="col">Nombre del Modelo</th>
                 <th scope="col">Fecha de Carga</th>
                 <th scope="col">Salida</th>
+                <th scope="col">Acciones</th>
             </tr>
         </thead>
         <tbody>
             {% for modelo in modelos %}
             <tr>
-                <th scope="row">{{ modelo.id }}</th>
-                <td>{{ modelo.nombre }}</td>
-                <td>{{ modelo.fecha_carga }}</td>
-                <td>{{ modelo.salidas }}</td>
+                <th scope="row">{{ modelo.id_modelo }}</th>
+                <td>{{ modelo.descripcion }}</td>
+                <td>{{ modelo.fecha }}</td>
+                <td>{{ modelo.salida }}</td>
+                <td>
+                    {% if modelo.activo %}
+                    <a href="{{ url_for('admin_blueprint.desactivar_modelo', id=modelo.id_modelo) }}"
+                        class="btn btn-danger">Desactivar</a>
+                    {% else %}
+                    <a href="{{ url_for('admin_blueprint.activar_modelo', id=modelo.id_modelo) }}"
+                        class="btn btn-success">Activar</a>
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>

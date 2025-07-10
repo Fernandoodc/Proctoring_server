@@ -1,21 +1,17 @@
 from flask import request, redirect, url_for
 from src.routes import AuthRoutes, StreamRoutes, AdminRoutes, UsuariosRoutes, IndexRoutes
 from flask_login import current_user
-from src.database import models as dbModels
-from src.database.db_mysql import engine
+from datetime import datetime
 from src.models.usersModels import User
 from src.decoradores import authenticated_only
 import base64
-import os
 import numpy as np
-from flask_socketio import SocketIO, emit, Namespace
+from flask_socketio import emit, Namespace
 import time
 import threading
-from src.funciones import process_frame, check_heartbeats
-from src import *
+from src.utils.funciones import process_frame, check_heartbeats
+from src import socketio, app, login_manager_main, active_connections, CONECTADOS, detections
 # Cargar múltiples modelos
-
-dbModels.Base.metadata.create_all(bind=engine)
 
 
 @login_manager_main.user_loader
@@ -32,8 +28,6 @@ app.register_blueprint(AuthRoutes.main, url_prefix='/auth')
 app.register_blueprint(StreamRoutes.main, url_prefix='/stream')
 app.register_blueprint(AdminRoutes.main, url_prefix='/admin')
 app.register_blueprint(UsuariosRoutes.main, url_prefix='/usuarios')
-
-
 
 # Manejar la conexión de un cliente
 @socketio.on('connect')
@@ -73,10 +67,16 @@ def handle_heartbeat():
 def handle_video_frame(data):
     """Procesar los frames recibidos vía WebSocket."""
     try:
-        # El frame llega como base64, lo decodificamos
-        image_data = data.split(",")[1]  # Obtener solo los datos, sin la cabecera base64
+        # El frame llega como base64, es decodificado
+        image_data = data.split(",")[1]
         frame = base64.b64decode(image_data)
 
+        # Si ya de realizó una deteccion en un usuario, se espera X segundos para volver a realizar otra
+        if 'hora_ultima_det' in CONECTADOS[request.sid]:
+            now = datetime.now()
+            diff = now - CONECTADOS[request.sid]['hora_ultima_det']
+            if diff.total_seconds() < 1:
+                return
         # Crear un hilo para procesar el frame
         threading.Thread(target=process_frame, args=(frame, request.sid), daemon=True).start()
     except Exception as e:
@@ -90,6 +90,7 @@ class AdminNamespace(Namespace):
     # Manejar la conexión de un administrador
     def on_connect(self):
         print('Un administrador se ha conectado')
+        emit('connecteds', CONECTADOS)
         emit('detections', detections)
 
     def on_disconnect(self):
@@ -98,5 +99,4 @@ class AdminNamespace(Namespace):
 socketio.on_namespace(AdminNamespace('/admin'))
 
 if __name__ == '__main__':
-    #load_models()
     socketio.run(app, debug=True, allow_unsafe_werkzeug=True, host='0.0.0.0', ssl_context='adhoc')

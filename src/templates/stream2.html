@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emisor de Pantalla via WebSockets</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        #preview {
+            border: 2px solid #333;
+            margin: 20px 0;
+            max-width: 100%;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .connected {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .disconnected {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+        .stats {
+            margin-top: 20px;
+            text-align: left;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Emisor de Pantalla via WebSockets</h1>
+    
+    <div>
+        <label for="wsUrl">URL del servidor WebSocket:</label>
+        <input type="text" id="wsUrl" value="ws://localhost:8080" style="width: 300px;">
+    </div>
+    
+    <div>
+        <button id="startBtn">Iniciar Captura</button>
+        <button id="stopBtn" disabled>Detener Captura</button>
+        <button id="connectBtn">Conectar WS</button>
+        <button id="disconnectBtn" disabled>Desconectar WS</button>
+    </div>
+    
+    <div id="status" class="status disconnected">
+        Estado: Desconectado
+    </div>
+    
+    <video id="preview" autoplay playsinline></video>
+    
+    <div class="stats">
+        <h3>Estadísticas:</h3>
+        <p>FPS objetivo: <span id="targetFps">10</span></p>
+        <p>FPS real: <span id="actualFps">0</span></p>
+        <p>Tamaño promedio del frame: <span id="avgFrameSize">0</span> KB</p>
+        <p>Frames enviados: <span id="framesSent">0</span></p>
+    </div>
+
+    <script>
+        // Elementos del DOM
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const preview = document.getElementById('preview');
+        const statusDiv = document.getElementById('status');
+        const wsUrlInput = document.getElementById('wsUrl');
+        
+        // Elementos de estadísticas
+        const targetFpsSpan = document.getElementById('targetFps');
+        const actualFpsSpan = document.getElementById('actualFps');
+        const avgFrameSizeSpan = document.getElementById('avgFrameSize');
+        const framesSentSpan = document.getElementById('framesSent');
+        
+        // Variables de estado
+        let mediaStream = null;
+        let mediaRecorder = null;
+        let socket = null;
+        let isConnected = false;
+        let isCapturing = false;
+        let frameInterval = null;
+        let frameQueue = [];
+        
+        // Estadísticas
+        let stats = {
+            frameCount: 0,
+            lastFrameTime: 0,
+            fps: 0,
+            totalFrameSize: 0,
+            avgFrameSize: 0
+        };
+        
+        // Configuración
+        const TARGET_FPS = 100;
+        targetFpsSpan.textContent = TARGET_FPS;
+        
+        // Event Listeners
+        startBtn.addEventListener('click', startCapture);
+        stopBtn.addEventListener('click', stopCapture);
+        connectBtn.addEventListener('click', connectWebSocket);
+        disconnectBtn.addEventListener('click', disconnectWebSocket);
+        
+        // Función para iniciar la captura de pantalla
+        async function startCapture() {
+            try {
+                // Solicitar acceso a la pantalla
+                mediaStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: {
+                        cursor: "always",
+                        frameRate: { ideal: TARGET_FPS, max: TARGET_FPS }
+                    },
+                    audio: false
+                });
+                
+                // Mostrar la vista previa
+                preview.srcObject = mediaStream;
+                
+                // Configurar el canvas para capturar frames
+                setupFrameCapture();
+                
+                // Actualizar estado de los botones
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                isCapturing = true;
+                
+                console.log("Captura de pantalla iniciada");
+            } catch (err) {
+                console.error("Error al iniciar la captura:", err);
+                alert(`Error al iniciar la captura: ${err.message}`);
+            }
+        }
+        
+        // Función para detener la captura
+        function stopCapture() {
+            if (mediaStream) {
+                const tracks = mediaStream.getTracks();
+                tracks.forEach(track => track.stop());
+                
+                // Detener el intervalo de frames
+                if (frameInterval) {
+                    clearInterval(frameInterval);
+                    frameInterval = null;
+                }
+                
+                // Limpiar la vista previa
+                preview.srcObject = null;
+                
+                // Actualizar estado de los botones
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                isCapturing = false;
+                
+                console.log("Captura de pantalla detenida");
+            }
+        }
+        
+        // Configurar la captura de frames
+        function setupFrameCapture() {
+            // Crear un canvas oculto para capturar frames
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Configurar el tamaño del canvas para que coincida con el video
+            function updateCanvasSize() {
+                if (preview.videoWidth && preview.videoHeight) {
+                    canvas.width = preview.videoWidth;
+                    canvas.height = preview.videoHeight;
+                }
+            }
+            
+            // Escuchar cambios en el tamaño del video
+            preview.addEventListener('resize', updateCanvasSize);
+            updateCanvasSize();
+            
+            // Función para capturar un frame
+            function captureFrame() {
+                if (preview.videoWidth === 0 || preview.videoHeight === 0) return;
+                
+                // Dibujar el frame actual en el canvas
+                ctx.drawImage(preview, 0, 0, canvas.width, canvas.height);
+                
+                // Convertir a base64 (calidad reducida para mejorar rendimiento)
+                const imageData = canvas.toDataURL('image/jpeg', 0.5);
+                
+                // Agregar a la cola de frames
+                frameQueue.push(imageData);
+                
+                // Actualizar estadísticas
+                updateStats(imageData);
+            }
+            
+            // Configurar el intervalo para capturar frames (10fps = 100ms por frame)
+            frameInterval = setInterval(captureFrame, 1000 / TARGET_FPS);
+            
+            // Configurar el envío de frames
+            setupFrameSender();
+        }
+        
+        // Configurar el envío de frames
+        function setupFrameSender() {
+            // Función para enviar frames
+            function sendFrames() {
+                if (frameQueue.length > 0 && isConnected) {
+                    const frame = frameQueue.shift();
+                    
+                    try {
+                        socket.send(frame);
+                        stats.frameCount++;
+                        framesSentSpan.textContent = stats.frameCount;
+                    } catch (err) {
+                        console.error("Error al enviar frame:", err);
+                    }
+                }
+            }
+            
+            // Configurar un intervalo para enviar frames
+            // Usamos setInterval para mantener un ritmo constante de envío
+            setInterval(sendFrames, 1000 / TARGET_FPS);
+        }
+        
+        // Actualizar estadísticas
+        function updateStats(frameData) {
+            const now = performance.now();
+            
+            // Calcular FPS
+            if (stats.lastFrameTime > 0) {
+                const delta = (now - stats.lastFrameTime) / 1000;
+                stats.fps = 1 / delta;
+                actualFpsSpan.textContent = stats.fps.toFixed(1);
+            }
+            stats.lastFrameTime = now;
+            
+            // Calcular tamaño promedio del frame
+            const frameSize = (frameData.length * 3 / 4) / 1024; // Tamaño en KB (aproximado)
+            stats.totalFrameSize += frameSize;
+            stats.avgFrameSize = stats.totalFrameSize / (stats.frameCount + 1);
+            avgFrameSizeSpan.textContent = stats.avgFrameSize.toFixed(2);
+        }
+        
+        // Conectar al servidor WebSocket
+        function connectWebSocket() {
+            const wsUrl = wsUrlInput.value.trim();
+            
+            if (!wsUrl) {
+                alert("Por favor ingresa una URL válida para el servidor WebSocket");
+                return;
+            }
+            
+            try {
+                socket = new WebSocket(wsUrl);
+                
+                socket.onopen = function() {
+                    console.log("Conexión WebSocket establecida");
+                    isConnected = true;
+                    statusDiv.textContent = "Estado: Conectado";
+                    statusDiv.className = "status connected";
+                    connectBtn.disabled = true;
+                    disconnectBtn.disabled = false;
+                    
+                    if (isCapturing) {
+                        setupFrameSender();
+                    }
+                };
+                
+                socket.onclose = function() {
+                    console.log("Conexión WebSocket cerrada");
+                    isConnected = false;
+                    statusDiv.textContent = "Estado: Desconectado";
+                    statusDiv.className = "status disconnected";
+                    connectBtn.disabled = false;
+                    disconnectBtn.disabled = true;
+                };
+                
+                socket.onerror = function(error) {
+                    console.error("Error en WebSocket:", error);
+                    statusDiv.textContent = "Estado: Error de conexión";
+                    statusDiv.className = "status disconnected";
+                };
+            } catch (err) {
+                console.error("Error al conectar WebSocket:", err);
+                alert(`Error al conectar WebSocket: ${err.message}`);
+            }
+        }
+        
+        // Desconectar del servidor WebSocket
+        function disconnectWebSocket() {
+            if (socket) {
+                socket.close();
+            }
+        }
+        
+        // Limpiar al cerrar la página
+        window.addEventListener('beforeunload', function() {
+            if (isCapturing) {
+                stopCapture();
+            }
+            if (isConnected) {
+                disconnectWebSocket();
+            }
+        });
+    </script>
+</body>
+</html>

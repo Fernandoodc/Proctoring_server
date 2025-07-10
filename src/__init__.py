@@ -5,11 +5,14 @@ from config import settings
 from tensorflow.keras.models import load_model
 from src.database.db_mysql import get_connection
 from src.database.models import Modelos as dbModelo
+from src.database import models as dbModels
+from src.database.db_mysql import engine
 import os
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 app.config['UPLOAD_FOLDER'] = settings.UPLOAD_FOLDER
-
+app.config['DETENCIONES_FOLDER'] = settings.DETENCIONES_FOLDER
+dbModels.Base.metadata.create_all(bind=engine)
 
 
 
@@ -17,10 +20,6 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 login_manager_main = LoginManager(app)
 
 CONECTADOS = {}
-MODELS = {
-    "Facebook": "modelos/multi_softmax/facebook_mobilenet_fino_model.keras",
-    "WhatsApp": "modelos/multi_softmax/whatsapp_mobilenet_fino_model.keras",
-}
 connection = get_connection()
 MODELS = connection.query(dbModelo).filter(dbModelo.activo == True).all()
 connection.close()
@@ -32,11 +31,6 @@ for modelo in MODELS:
         "nombre": modelo.descripcion
 }
 print(loaded_models, "MODELOS CARGADOS")
-
-"""print(os.listdir('modelos'))
-loaded_models = {}
-loaded_models = {name: load_model(path) for name, path in MODELS.items()}"""
-
 
 
 active_connections = {}

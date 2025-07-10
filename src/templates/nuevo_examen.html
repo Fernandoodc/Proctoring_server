@@ -1,27 +1,96 @@
 {% extends "base_admin.html" %}
 {% block title %}Nuevo Examen{% endblock %}
 {% block custom_css %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
 {% endblock %}
 {% block header %}Nuevo Examen{% endblock %}
 {% block content %}
 <main>
     <form action="" method="POST">
-        <!--<div class="form-group">
-            <label for="nombre">Nombre del Examen</label>
-            <input type="text" class="form-control" id="nombre" name="nombre" required>
-        </div>-->
         <div class="form-group">
             <label for="descripcion">Programas a Utilizar</label>
-            <select class="form-control select2" multiple id="salidas" name="salidas" required>
-                {% for salida in salidas %}
-                <option value="{{salida.id_salida}}">{{salida.descripcion}} - {{salida.modelo.descripcion}}</option>
+            <select class="form-control select2" multiple id="modelos" name="modelos" required>
+                {% for modelo in modelos %}
+                <option value="{{modelo.id_modelo}}">{{modelo.salida}}  - {{modelo.descripcion}}</option>
                 {% endfor %}
             </select>
         </div>
-        <button type="submit" class="btn btn-primary">Iniciar Examen</button>
+        <!-- Modal trigger button -->
+        <button
+            type="button"
+            class="btn btn-primary"
+            data-bs-toggle="modal"
+            data-bs-target="#iniciarExamen-modal"
+        >
+            Iniciar Examen
+        </button>
+        
+        <!-- Modal Body -->
+        <!-- if you want to close by clicking outside the modal, delete the last endpoint:data-bs-backdrop and data-bs-keyboard -->
+        <div
+            class="modal fade"
+            id="iniciarExamen-modal"
+            tabindex="-1"
+            data-bs-backdrop="static"
+            data-bs-keyboard="false"
+            
+            role="dialog"
+            aria-labelledby="title-modal"
+            aria-hidden="true"
+        >
+            <div
+                class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-lg"
+                role="document"
+            >
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="title-modal">
+                            Antes de Iniciar el Examen</i>
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <p> Para garantizar la privacidad de los alumnos y asegurar un entorno de supervisión adecuado, es obligatorio cumplir con las siguientes normas. La supervisión debe limitarse exclusivamente a la detección de posibles infracciones durante el examen. No está permitido revisar información personal del alumno, como mensajes, correos electrónicos, documentos privados o cualquier contenido ajeno a la evaluación.</p>
+                        <p>Asimismo, antes de comenzar, el docente debe asegurarse de que los alumnos han sido informados sobre el monitoreo y comprenden las condiciones de supervisión. Toda la información recopilada, incluidas las capturas de pantalla y registros generados, debe mantenerse en estricta confidencialidad y utilizarse únicamente para los fines de la evaluación.</p>
+                        <p>Bajo ninguna circunstancia se debe compartir, divulgar o emplear el material obtenido para otros propósitos distintos a la supervisión del examen. </p>
+                        <p>Al iniciar la evaluación, usted confirma que ha leído y acepta cumplir estas normas.</p>
+                            
+                        <p class="mt-2">¿Desea continuar?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">Iniciar Examen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Optional: Place to the bottom of scripts -->
+        <script>
+            const myModal = new bootstrap.Modal(
+                document.getElementById("iniciarExamen-modal"),
+                options,
+            );
+        </script>
+        
+    </form>
 {% endblock %}
 {% block custom_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
+        integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF"
+        crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     $(document).ready(function() {

@@ -67,8 +67,8 @@
                     <thead>
                         <tr>
                             <th>Usuario</th>
-                            <th>Mensaje</th>
-                            <th>Imagen</th>
+                            <th>Total Detecciones</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -86,6 +86,35 @@
         </div>
     </div>
 </main>
+
+<!-- Modal para mostrar detalles de detecciones -->
+<div class="modal" id="detectionModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalles de Detecciones</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table id="detection-details-table">
+                    <thead>
+                        <tr>
+                            <th>Mensaje</th>
+                            <th>Imagen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 {% block custom_js %}
 <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
@@ -94,38 +123,32 @@
 
     const tableBody = document.querySelector('#detections-table tbody');
     const noDetectionsRow = document.getElementById('no-detections-row');
+    const detections = {};
 
     // Escuchar las notificaciones de detecciones
     socket.on('new_detection', (data) => {
         console.log('Nueva detección:', data);
+        const { id_usuario, usuario, mensaje, id_imagen } = data;
+
         // Quitar el mensaje de "No hay detecciones" si existe
         if (noDetectionsRow) {
             noDetectionsRow.remove();
         }
-        
 
-        // Crear una nueva fila para la detección
-        const newRow = document.createElement('tr');
+        // Agrupar detecciones por usuario
+        if (!detections[id_usuario]) {
+            detections[id_usuario] = {
+                usuario: usuario,
+                total: 0,
+                detalles: []
+            };
+        }
 
-        const sidCell = document.createElement('td');
-        sidCell.textContent = data.usuario;
+        detections[id_usuario].total += 1;
+        detections[id_usuario].detalles.push({ mensaje, id_imagen });
 
-        const modelCell = document.createElement('td');
-        modelCell.textContent = data.mensaje;
-
-        const imagenCell = document.createElement('td');
-        const imagenLink = document.createElement('a');
-        imagenLink.href = `/admin/detecciones/imagen/${data.id_imagen}`;
-        imagenLink.textContent = 'Ver Imagen';
-        imagenLink.target = '_blank'; // Abrir en otra pestaña
-        imagenCell.appendChild(imagenLink);
-
-        newRow.appendChild(sidCell);
-        newRow.appendChild(modelCell);
-        newRow.appendChild(imagenCell);
-
-        // Agregar la fila a la tabla
-        tableBody.appendChild(newRow);
+        // Actualizar la tabla
+        updateTable();
     });
 
     socket.on('connecteds', (data) => {
@@ -149,6 +172,58 @@
         noDetectionsRow.id = 'no-detections-row';
         noDetectionsRow.innerHTML = '<td colspan="3" class="no-detections">No hay detecciones por el momento</td>';
         tableBody.appendChild(noDetectionsRow);
+        Object.keys(detections).forEach(key => delete detections[key]);
     });
+
+    function updateTable() {
+        tableBody.innerHTML = '';
+        Object.entries(detections).forEach(([id_usuario, data]) => {
+            const row = document.createElement('tr');
+
+            const usuarioCell = document.createElement('td');
+            usuarioCell.textContent = data.usuario;
+
+            const totalCell = document.createElement('td');
+            totalCell.textContent = data.total;
+
+            const actionsCell = document.createElement('td');
+            const detailsButton = document.createElement('button');
+            detailsButton.textContent = 'Ver Detalles';
+            detailsButton.classList.add('btn', 'btn-info');
+            detailsButton.addEventListener('click', () => showDetails(id_usuario));
+            actionsCell.appendChild(detailsButton);
+
+            row.appendChild(usuarioCell);
+            row.appendChild(totalCell);
+            row.appendChild(actionsCell);
+
+            tableBody.appendChild(row);
+        });
+    }
+
+    function showDetails(id_usuario) {
+        const detailsTableBody = document.querySelector('#detection-details-table tbody');
+        detailsTableBody.innerHTML = '';
+        detections[id_usuario].detalles.forEach(detection => {
+            const row = document.createElement('tr');
+
+            const mensajeCell = document.createElement('td');
+            mensajeCell.textContent = detection.mensaje;
+
+            const imagenCell = document.createElement('td');
+            const imagenLink = document.createElement('a');
+            imagenLink.href = `/admin/detecciones/imagen/${detection.id_imagen}`;
+            imagenLink.textContent = 'Ver Imagen';
+            imagenLink.target = '_blank'; // Abrir en otra pestaña
+            imagenCell.appendChild(imagenLink);
+
+            row.appendChild(mensajeCell);
+            row.appendChild(imagenCell);
+
+            detailsTableBody.appendChild(row);
+        });
+
+        $('#detectionModal').modal('show');
+    }
 </script>
 {% endblock %}

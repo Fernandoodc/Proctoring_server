@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify, render_template, redirect, flash, session
 from flask_login import login_user, logout_user
-import traceback
 from config import settings
 from datetime import datetime, timedelta
 

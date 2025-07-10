@@ -11,4 +11,4 @@ def index():
     elif tipo_usuario == 3:
         return redirect("/stream")
     else:
-        return redirect("/login")  # Redirigir a la página de inicio de sesión si el tipo de usuario no está definido
+        return redirect("/auth")  # Redirigir a la página de inicio de sesión si el tipo de usuario no está definido

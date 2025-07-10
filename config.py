@@ -11,10 +11,11 @@ class Config():
 class Settings:
     PROJECT_TITLE: str = ""
     PROJECT_VERSION: str = "0.1"
-    DATABASE_URL = "mysql+mysqlconnector://admin:admin@localhost:3310/cnn"
+    DATABASE_URL = "mysql+mysqlconnector://admin:admin@localhost:3310/tesis"
     ALGORITHM = "HS256"
     HASH = "pbkdf2:sha256"
     UPLOAD_FOLDER = "modelos/"
+    DETENCIONES_FOLDER = "src/static/uploads/detecciones/"
     SECRET_KEY: str = os.getenv("SECRET_KEY")
     KEY_TOKEN: str = "access-token"
     VIDA_TOKEN : int =  6  #Horas de vida del token de sesion
